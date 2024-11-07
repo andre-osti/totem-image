@@ -87,7 +87,7 @@ function load_config() {
 # Verify that necessary configuration values are set and they are valid
 function check_config() {
     local expected_config_version
-    expected_config_version="0.4"
+    expected_config_version="0.5"
 
     if [[ "$CONFIG_FILE_VERSION" != "$expected_config_version" ]]; then
         >&2 echo "Invalid or old config version $CONFIG_FILE_VERSION, expected $expected_config_version. Please update your configuration file from the default."
@@ -119,6 +119,9 @@ function run_chroot() {
         sudo ln -f $SCRIPT_DIR/config.sh chroot/root/config.sh
     fi
 
+    # Setup playbooks for usage in Ansible
+    sudo cp -R $SCRIPT_DIR/playbooks chroot/root/playbooks
+
     # Launch into chroot environment to build install image.
     sudo chroot chroot /usr/bin/env DEBIAN_FRONTEND=${DEBIAN_FRONTEND:-readline} /root/chroot_build.sh -
 
@@ -128,6 +131,7 @@ function run_chroot() {
     if [[ -f "chroot/root/config.sh" ]]; then
         sudo rm -f chroot/root/config.sh
     fi
+    sudo rm -rf chroot/root/playbooks
 
     chroot_exit_teardown
 }
@@ -136,7 +140,7 @@ function build_iso() {
     echo "=====> running build_iso ..."
 
     # move image artifacts
-    sudo mv chroot/image .
+    sudo cp -r chroot/image .
 
     # compress rootfs
     sudo mksquashfs chroot image/casper/filesystem.squashfs \

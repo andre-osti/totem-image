@@ -95,8 +95,9 @@ function load_config() {
 
 function install_pkg() {
     echo "=====> running install_pkg ... will take a long time ..."
+    apt-get -y update
     apt-get -y upgrade
-
+    
     # install live packages
     apt-get install -y \
         sudo \
@@ -170,7 +171,7 @@ function build_image() {
 
     rm -rf /image
 
-    mkdir -p /image/{casper,isolinux,install}
+    mkdir -p /image/{preseed,casper,isolinux,install}
 
     pushd /image
 
@@ -184,6 +185,31 @@ function build_image() {
     unzip -p install/memtest86.zip memtest64.efi > install/memtest86+.efi
     rm -f install/memtest86.zip
 
+    # preseed
+    # based on issue https://github.com/mvallim/live-custom-ubuntu-from-scratch/issues/10
+#     cat <<EOF > /image/preseed/totem.seed
+
+# # User is created through playbook, no need to ask the installer for it
+# d-i passwd/make-user boolean false
+# d-i preseed/late_command string \
+#  echo "[daemon]" > /target/etc/gdm3/custom.conf; \
+#  echo "AutomaticLoginEnable=true" >> /target/etc/gdm3/custom.conf; \
+#  echo "AutomaticLogin=totem" >> /target/etc/gdm3/custom.conf
+       
+# # Disable updates on install
+# d-i pkgsel/update-policy select none
+        
+# # Disable third-party packages install
+# d-i pkgsel/include string ""
+# d-i pkgsel/allow-thirdparty boolean false
+	
+# # User configuration
+# # Validate here
+
+# ubiquity ubiquity/success_command string \
+#    in-target echo "Installation is ok";
+# EOF
+
     # grub
     touch ubuntu
     cat <<EOF > isolinux/grub.cfg
@@ -196,12 +222,12 @@ set default="0"
 set timeout=30
 
 menuentry "Try Ubuntu FS without installing" {
-    linux /casper/vmlinuz boot=casper nopersistent toram quiet splash ---
+    linux /casper/vmlinuz file=/cdrom/preseed/totem.seed boot=casper nopersistent toram quiet splash ---
     initrd /casper/initrd
 }
 
 menuentry "Install Ubuntu FS" {
-    linux /casper/vmlinuz boot=casper only-ubiquity quiet splash ---
+    linux /casper/vmlinuz file=/cdroom/preseed/totem.seed boot=casper only-ubiquity quiet splash ---
     initrd /casper/initrd
 }
 

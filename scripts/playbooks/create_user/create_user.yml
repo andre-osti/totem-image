@@ -1,0 +1,17 @@
+- name: Create a user with home directory and default password
+  hosts: all
+  become: yes
+  vars_files:
+    - vars.yml
+
+  tasks:
+    - name: Create the user with a home directory
+      user:
+        name: "{{ username }}"
+        state: present
+        create_home: yes
+
+    - name: Set the user's default password
+      user:
+        name: "{{ username }}"
+        password: "{{ user_password | password_hash('sha512') }}"

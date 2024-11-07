@@ -7,7 +7,7 @@
 
 # The version of Ubuntu to generate.  Successfully tested LTS: bionic, focal, jammy, noble
 # See https://wiki.ubuntu.com/DevelopmentCodeNames for details
-export TARGET_UBUNTU_VERSION="focal"
+export TARGET_UBUNTU_VERSION="noble"
 
 # The Ubuntu Mirror URL. It's better to change for faster download.
 # More mirrors see: https://launchpad.net/ubuntu/+archivemirrors
@@ -19,13 +19,13 @@ export TARGET_KERNEL_PACKAGE="linux-generic"
 
 # The file (no extension) of the ISO containing the generated disk image,
 # the volume id, and the hostname of the live environment are set from this name.
-export TARGET_NAME="ubuntu-from-scratch"
+export TARGET_NAME="totem"
 
 # The text label shown in GRUB for booting into the live environment
-export GRUB_LIVEBOOT_LABEL="Try Ubuntu FS without installing"
+export GRUB_LIVEBOOT_LABEL="Try Ubuntu without installing"
 
 # The text label shown in GRUB for starting installation
-export GRUB_INSTALL_LABEL="Install Ubuntu FS"
+export GRUB_INSTALL_LABEL="Install Ubuntu"
 
 # Packages to be removed from the target system after installation completes succesfully
 export TARGET_PACKAGE_REMOVE="
@@ -40,24 +40,30 @@ export TARGET_PACKAGE_REMOVE="
 # present on the installed system.
 function customize_image() {
     # install graphics and desktop
+    echo "Install graphics and desktop"
     apt-get install -y \
         plymouth-themes \
-        ubuntu-gnome-desktop \
-        ubuntu-gnome-wallpapers
+        ubuntu-gnome-wallpapers \
+        ubuntu-gnome-desktop
 
     # useful tools
+    echo "Install useful tools"
     apt-get install -y \
-        clamav-daemon \
-        terminator \
+	    ansible \
         apt-transport-https \
         curl \
         vim \
         nano \
         less
 
+    # apply totem playbooks
+    #LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8 ansible-playbook --connection=local --inventory 127.0.0.1, playbooks/create_user/create_user.yml
+    #LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8 ansible-playbook --connection=local --inventory 127.0.0.1, playbooks/install_chrome/install_chrome.yml
+
     # purge
     apt-get purge -y \
-        transmission-gtk \
+        ansible \
+	    transmission-gtk \
         transmission-common \
         gnome-mahjongg \
         gnome-mines \
