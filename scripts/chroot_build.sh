@@ -187,28 +187,47 @@ function build_image() {
 
     # preseed
     # based on issue https://github.com/mvallim/live-custom-ubuntu-from-scratch/issues/10
-#     cat <<EOF > /image/preseed/totem.seed
+    cat <<EOF > /image/preseed/totem.seed
+# Based on https://github.com/Nitrokey/ubuntu-oem/blob/master/nitrokey-oem-22.04.seed
+# Silence a bunch of other questions
+ubiquity countrychooser/shortlist select US
+ubiquity languagechooser/language-name select English
+ubiquity localechooser/supported-locales multiselect en_US.UTF-8
 
-# # User is created through playbook, no need to ask the installer for it
-# d-i passwd/make-user boolean false
-# d-i preseed/late_command string \
-#  echo "[daemon]" > /target/etc/gdm3/custom.conf; \
-#  echo "AutomaticLoginEnable=true" >> /target/etc/gdm3/custom.conf; \
-#  echo "AutomaticLogin=totem" >> /target/etc/gdm3/custom.conf
-       
-# # Disable updates on install
-# d-i pkgsel/update-policy select none
-        
-# # Disable third-party packages install
-# d-i pkgsel/include string ""
-# d-i pkgsel/allow-thirdparty boolean false
-	
-# # User configuration
-# # Validate here
+# Disable questions about package installation
+d-i ubiquity/download_updates boolean false
+d-i ubiquity/nonfree_package boolean false
 
-# ubiquity ubiquity/success_command string \
-#    in-target echo "Installation is ok";
-# EOF
+d-i pkgsel/include string ubuntu-restricted-extras
+d-i pkgsel/update-policy select none
+d-i pkgsel/upgrade select none
+d-i mirror/country string BR
+d-i mirror/http/hostname string br.archive.ubuntu.com
+d-i mirror/http/directory string /ubuntu
+d-i mirror/http/proxy string
+d-i mirror/http/mirror select br.archive.ubuntu.com
+d-i pkgsel/install-language-support boolean false
+
+# Disable automatic (interactive) keymap detection.
+d-i console-setup/ask_detect boolean false
+d-i keyboard-configuration/xkb-keymap select us
+d-i keyboard-configuration/layoutcode select us
+
+# Encoding must be set *somewhere*, such as here, otherwise
+# a broken system is produced.
+d-i debian-installer/locale string en_US.UTF-8
+d-i time/zone string Etc/UTC
+
+# Set password for oem user that will be removed later anyway.
+# Without setting the full name, username and password here, the OEM user
+# setup dialog is shown during installation.
+d-i passwd/user-fullname string OEM
+d-i passwd/username string oem
+d-i passwd/user-password password oem
+d-i passwd/user-password-again password oem
+d-i user-setup/allow-password-weak boolean true
+
+EOF
 
     # grub
     touch ubuntu
@@ -221,13 +240,15 @@ insmod all_video
 set default="0"
 set timeout=30
 
+# Disable LiveCD because custom user doesnt work properly with it
+# Ex.: chrome doesnt open, we dont want to add the user to sudoers, so installation also cant proceed
 menuentry "Try Ubuntu FS without installing" {
-    linux /casper/vmlinuz file=/cdrom/preseed/totem.seed boot=casper nopersistent toram quiet splash ---
+    linux /casper/vmlinuz file=/cdrom/preseed/totem.seed boot=casper username=totem nopersistent toram quiet splash ---
     initrd /casper/initrd
 }
 
 menuentry "Install Ubuntu FS" {
-    linux /casper/vmlinuz file=/cdroom/preseed/totem.seed boot=casper only-ubiquity quiet splash ---
+    linux /casper/vmlinuz file=/cdrom/preseed/totem.seed boot=casper automatic-ubiquity quiet splash ---
     initrd /casper/initrd
 }
 

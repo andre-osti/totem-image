@@ -5,13 +5,58 @@
     - vars.yml
 
   tasks:
-    - name: Create the user with a home directory
-      user:
-        name: "{{ username }}"
-        state: present
-        create_home: yes
-
-    - name: Set the user's default password
+    - name: Creates and configures the user
       user:
         name: "{{ username }}"
         password: "{{ user_password | password_hash('sha512') }}"
+        shell: /bin/bash
+        create_home: yes
+        # Temporary for debugging
+        # Ansible should have its own user separately
+        # Additionally, totem user should only be allowed to restart
+        # the services, apps, etc, not change them.
+        # Same goes for 3rd party support
+        groups: sudo
+        append: yes
+        state: present
+
+    - name: Ensure directory exists
+      file:
+        path: /home/{{ username }}/.config/
+        state: directory
+        mode: '0755'
+        owner: "{{ username }}"
+        group: "{{ username }}" 
+
+    # Disables login setup
+    - name: Disable initial ubuntu setup
+      file:
+        path: /home/{{ username }}/.config/gnome-initial-setup-done
+        state: touch
+        owner: "{{ username }}"
+        group: "{{ username }}" 
+
+    # Autologin on the totem user
+    - name: Create custom.conf for GDM
+      copy:
+        dest: /etc/gdm3/custom.conf
+        content: |
+          [daemon]
+          AutomaticLoginEnable=true
+          AutomaticLogin={{ username }}
+          InitialSetupEnable=false
+          [security]
+
+          [xdmcp]
+
+          [chooser]
+
+          [debug]
+        owner: root
+        group: root
+        mode: '0644'
+      
+  handlers:
+  - name: Reload systemd
+    systemd:
+      daemon_reload: yes

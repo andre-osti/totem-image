@@ -1,0 +1,34 @@
+# From https://github.com/konstruktoid/ansible-role-hardening README.md
+
+- name: Checkout and configure konstruktoid.hardening
+  hosts: localhost
+  any_errors_fatal: true
+  tasks:
+    - name: Clone hardening repository
+      become: true
+      tags:
+        - always
+      block:
+        - name: Install git
+          ansible.builtin.package:
+            name: git
+            state: present
+
+        - name: Checkout konstruktoid.hardening
+          become: true
+          ansible.builtin.git:
+            repo: https://github.com/konstruktoid/ansible-role-hardening
+            dest: /etc/ansible/roles/konstruktoid.hardening
+            version: v2.2.0
+
+        - name: Remove git
+          ansible.builtin.package:
+            name: git
+            state: absent
+
+    - name: Include the hardening role
+      ansible.builtin.include_role:
+        name: konstruktoid.hardening
+      vars:
+        manage_usbguard: false
+        manage_aide: false

@@ -21,3 +21,22 @@
         name: google-chrome-stable
         state: present
 
+    - name: Create default Chrome preferences directory
+      file:
+        path: /etc/opt/chrome/policies/managed
+        state: directory
+        mode: '0755'
+
+    # Does not work yet...
+    # - name: Disable first-run prompts in Chrome
+    #   copy:
+    #     dest: /etc/opt/chrome/policies/managed/first_run.json
+    #     content: |
+    #       {
+    #         "BrowserSettings": {
+    #           "ImportBookmarks": false,
+    #           "ShowFirstRunBubble": false,
+    #           "SuppressFirstRunDefaultBrowserPrompt": true
+    #         }
+    #       }
+    #     mode: '0644'

@@ -43,8 +43,14 @@ function customize_image() {
     echo "Install graphics and desktop"
     apt-get install -y \
         plymouth-themes \
-        ubuntu-gnome-wallpapers \
-        ubuntu-gnome-desktop
+        ubuntu-wallpapers \
+        ubuntu-desktop-minimal # Works for xubuntu-desktop-minimal, but network needs restart. Why?
+                               # If we create a new user, then live mode does not automatically opens the sessions.
+                               # However, I think it is ok to ask for password, given it is the full system running?
+
+    # install expected locales
+    locale-gen en_US.UTF-8 pt_BR.UTF-8
+    update-locale LANG=pt_BR.UTF-8 LANGUAGE="pt_BR:en_US" LC_ALL=pt_BR.UTF-8
 
     # useful tools
     echo "Install useful tools"
@@ -57,8 +63,14 @@ function customize_image() {
         less
 
     # apply totem playbooks
-    #LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8 ansible-playbook --connection=local --inventory 127.0.0.1, playbooks/create_user/create_user.yml
-    #LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8 ansible-playbook --connection=local --inventory 127.0.0.1, playbooks/install_chrome/install_chrome.yml
+    LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8 ansible-playbook --connection=local --inventory 127.0.0.1, /root/playbooks/create_user/create_user.yml
+    # Wont run in livecd mode because of lack of apparmor profile. To test, it is possible to run chrome with --no-sandbox (insecure).
+    LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8 ansible-playbook --connection=local --inventory 127.0.0.1, /root/playbooks/install_chrome/install_chrome.yml
+    ## TODO: add all backend needed here... Be careful to add it to the totem user.
+    ## TODO: In the future, we may want to allow the totem user to start the application, but not change anything in the system.
+
+    # Should be executed after the first login
+    # LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8 ansible-playbook --skip-tags "apparmor" --connection=local --inventory 127.0.0.1, /root/playbooks/hardening/hardening.yml
 
     # purge
     apt-get purge -y \
